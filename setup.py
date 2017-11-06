@@ -8,7 +8,8 @@ CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
     'requests',
-    'click'
+    'click',
+    'click-shell'
     ]
 
 setup(name='openwifi_cli',
