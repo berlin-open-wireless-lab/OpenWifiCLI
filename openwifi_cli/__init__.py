@@ -2,8 +2,8 @@ import click
 from click_shell import shell
 import requests
 import requests.exceptions
+from .basic import generate_basic_functions
 
-#@click.group()
 @shell(prompt='openwifi-shell >')
 @click.option('--server', default='http://localhost', help='Full URL-Path to the OpenWifi Server')
 @click.option('--user', default=None, help='Username')
@@ -32,30 +32,18 @@ def main(ctx, server, user, password):
         ctx.obj['cookies'] = login.cookies
         ctx.obj['server'] = server
 
-@main.command()
+@main.group()
 @click.pass_context
-@click.option('--id', default=None)
-def users(ctx, id):
-    jar = ctx.obj['cookies']
-    server = ctx.obj['server']
+def users(ctx):
+    pass
 
-    if id:
-        users_request = requests.get(server+'/users/'+id, cookies=jar)
-    else:
-        users_request = requests.get(server+'/users', cookies=jar)
+users_options = ['--login', '--password', '--admin/--no-admin']
+generate_basic_functions(users, '/users', users_options)
 
-    click.echo(users_request.json())
-
-@main.command()
+@main.group()
 @click.pass_context
-@click.option('--uuid', default=None)
-def nodes(ctx, uuid):
-    jar = ctx.obj['cookies']
-    server = ctx.obj['server']
+def nodes(ctx):
+    pass
 
-    if uuid:
-        nodes_request = requests.get(server+'/nodes/'+uuid, cookies=jar)
-    else:
-        nodes_request = requests.get(server+'/nodes', cookies=jar)
-
-    click.echo(nodes_request.json())
+nodes_options = ['--name', '--address', '--distribution', '--version', '--login', '--password']
+generate_basic_functions(nodes, '/nodes', nodes_options)
