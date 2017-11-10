@@ -64,5 +64,6 @@ generate_basic_functions(services, '/service', service_options)
 def access(ctx):
     pass
 
-access_options = ['--type', '--access', '--string', {'name' : '--query', 'type': JSON_PARSABLE}]
+access_options = ['--userid', '--apikeyid', '--access_all_nodes/--no-access_all_nodes', {'name' : '--data', 'type': JSON_PARSABLE},
+                  {'name': '--nodes', 'type':list}]
 generate_basic_functions(access, '/access', access_options)
