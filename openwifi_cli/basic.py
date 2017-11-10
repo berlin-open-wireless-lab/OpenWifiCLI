@@ -1,5 +1,15 @@
 import click
 import requests
+import json
+
+class json_parsable(click.ParamType):
+    name = 'json'
+
+    def convert(self, value, param, ctx):
+        try:
+            return json.loads(value)
+        except ValueError:
+            self.fail('%s is not a valid json string.' % value, param, ctx)
 
 def generate_basic_functions(group, path, options):
 
@@ -46,8 +56,29 @@ def generate_basic_functions(group, path, options):
 
         click.echo(ctx.obj['result'])
 
-    for option in options:
-        add = click.option(option, prompt=True)(add)
+    def decorate_with_options(f, ignore_prompt=False):
+        for option in options:
+            if type(option) == dict:
+                option_name = option['name']
+
+                try:
+                    option_type = option['type']
+                except:
+                    option_type = str
+                try:
+                    if not ignore_prompt:
+                        option_prompt = option['prompt']
+                    else:
+                        option_prompt = False
+                except:
+                    option_prompt = True
+
+                f = click.option(option_name, prompt=option_prompt, type=option_type)(f)
+            else:
+                f = click.option(option, prompt=True)(f)
+        return f
+
+    decorate_with_options(add)
 
     @group.command()
     @click.pass_context
@@ -64,6 +95,5 @@ def generate_basic_functions(group, path, options):
             ctx.obj['result'].append(nodes_request.text)
 
         click.echo(ctx.obj['result'])
-
-    for option in options:
-        mod = click.option(option)(mod)
+    
+    decorate_with_options(mod, True)

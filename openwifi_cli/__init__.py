@@ -2,7 +2,9 @@ import click
 from click_shell import shell
 import requests
 import requests.exceptions
-from .basic import generate_basic_functions
+from .basic import generate_basic_functions, json_parsable
+
+JSON_PARSABLE = json_parsable()
 
 @shell(prompt='openwifi-shell >')
 @click.option('--server', default='http://localhost', help='Full URL-Path to the OpenWifi Server')
@@ -47,3 +49,20 @@ def nodes(ctx):
 
 nodes_options = ['--name', '--address', '--distribution', '--version', '--login', '--password']
 generate_basic_functions(nodes, '/nodes', nodes_options)
+
+@main.group()
+@click.pass_context
+def services(ctx):
+    pass
+
+service_options = ['--name', {'name' : '--queries', 'type': JSON_PARSABLE} ,\
+                   '--capability_script', '--capability_match']
+generate_basic_functions(services, '/service', service_options)
+
+@main.group()
+@click.pass_context
+def access(ctx):
+    pass
+
+access_options = ['--type', '--access', '--string', {'name' : '--query', 'type': JSON_PARSABLE}]
+generate_basic_functions(access, '/access', access_options)
