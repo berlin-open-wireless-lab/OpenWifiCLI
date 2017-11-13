@@ -11,8 +11,8 @@ class json_parsable(click.ParamType):
         except ValueError:
             self.fail('%s is not a valid json string.' % value, param, ctx)
 
-def generate_basic_functions(group, path, options):
 
+def generate_show(group, path):
     @group.command()
     @click.pass_context
     @click.argument('uuid', nargs=-1, required=False)
@@ -31,6 +31,7 @@ def generate_basic_functions(group, path, options):
 
         click.echo(ctx.obj['result'])
 
+def generate_delete(group, path):
     @group.command()
     @click.pass_context
     @click.argument('uuids', nargs=-1)
@@ -44,6 +45,11 @@ def generate_basic_functions(group, path, options):
             ctx.obj['result'].append(nodes_request.json())
 
         click.echo(ctx.obj['result'])
+
+def generate_basic_functions(group, path, options):
+
+    generate_show(group, path)
+    generate_delete(group, path)
 
     @group.command()
     @click.pass_context

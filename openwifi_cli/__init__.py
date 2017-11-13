@@ -2,7 +2,7 @@ import click
 from click_shell import shell
 import requests
 import requests.exceptions
-from .basic import generate_basic_functions, json_parsable
+from .basic import generate_basic_functions, json_parsable, generate_show
 
 JSON_PARSABLE = json_parsable()
 
@@ -50,6 +50,20 @@ def nodes(ctx):
 nodes_options = ['--name', '--address', '--distribution', '--version', '--login', '--password']
 generate_basic_functions(nodes, '/nodes', nodes_options)
 
+@nodes.command()
+@click.pass_context
+@click.argument('uuid', nargs=-1)
+def get_diff(ctx, uuid):
+    jar = ctx.obj['cookies']
+    server = ctx.obj['server']
+
+    ctx.obj['result'] = []
+    for uid in uuid:
+        nodes_request = requests.get(server+'/nodes/'+uid+'/diff', cookies=jar)
+        ctx.obj['result'].append(nodes_request.json())
+
+    click.echo(ctx.obj['result'])
+
 @main.group()
 @click.pass_context
 def services(ctx):
@@ -67,3 +81,11 @@ def access(ctx):
 access_options = ['--userid', '--apikeyid', '--access_all_nodes/--no-access_all_nodes', {'name' : '--data', 'type': JSON_PARSABLE},
                   {'name': '--nodes', 'type':list}]
 generate_basic_functions(access, '/access', access_options)
+
+@main.group()
+@click.pass_context
+def settings(ctx):
+    pass
+
+settings_optios = ['--key', '--value']
+generate_basic_functions(settings, '/settings', settings_optios)
