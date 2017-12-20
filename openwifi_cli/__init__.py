@@ -104,3 +104,12 @@ def settings(ctx):
 
 settings_optios = ['--key', '--value']
 generate_basic_functions(settings, '/settings', settings_optios)
+
+@main.command()
+@click.pass_context
+@click.option('--name', prompt=True)
+def generate_apikey(ctx, name):
+    jar = ctx.obj['cookies']
+    server = ctx.obj['server']
+    nodes_request = requests.post(server+'/get_apikey', json={"key":name}, cookies=jar)
+    click.echo(nodes_request.text)
