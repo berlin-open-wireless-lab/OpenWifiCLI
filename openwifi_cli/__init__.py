@@ -2,6 +2,7 @@ import click
 from click_shell import shell
 import requests
 import requests.exceptions
+import pprint
 from .basic import generate_basic_functions, json_parsable, generate_show
 
 JSON_PARSABLE = json_parsable()
@@ -12,6 +13,11 @@ JSON_PARSABLE = json_parsable()
 @click.option('--password', default=None, help='Password')
 @click.pass_context
 def main(ctx, server, user, password):
+    if len(server) < 7 or\
+       server[:7] != 'http://' or\
+       server[:8] != 'https://':
+        server = 'http://'+server
+
     try:
         r = requests.get(server)
     except requests.exceptions.ConnectionError:
@@ -60,9 +66,18 @@ def get_diff(ctx, uuid):
     ctx.obj['result'] = []
     for uid in uuid:
         nodes_request = requests.get(server+'/nodes/'+uid+'/diff', cookies=jar)
-        ctx.obj['result'].append(nodes_request.json())
+        from ast import literal_eval
+        data = literal_eval(nodes_request.text)
+        print(type(data))
+        data = literal_eval(data)
+        print(type(data))
+        ctx.obj['result'].append(data)
 
-    click.echo(ctx.obj['result'])
+    #import pdb
+    #pdb.set_trace()
+    pretty = pprint.pformat(ctx.obj['result'], indent=4)
+    click.echo(pretty)
+    #click.echo(ctx.obj['result'])
 
 @main.group()
 @click.pass_context
@@ -79,7 +94,7 @@ def access(ctx):
     pass
 
 access_options = ['--userid', '--apikeyid', '--access_all_nodes/--no-access_all_nodes', {'name' : '--data', 'type': JSON_PARSABLE},
-                  {'name': '--nodes', 'type':list}]
+                  {'name': '--nodes', 'type': JSON_PARSABLE}]
 generate_basic_functions(access, '/access', access_options)
 
 @main.group()

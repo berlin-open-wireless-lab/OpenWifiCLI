@@ -62,7 +62,7 @@ def generate_basic_functions(group, path, options):
 
         click.echo(ctx.obj['result'])
 
-    def decorate_with_options(f, ignore_prompt=False):
+    def decorate_with_options(f, ignore_prompt=False, prompt=True):
         for option in options:
             if type(option) == dict:
                 option_name = option['name']
@@ -81,7 +81,7 @@ def generate_basic_functions(group, path, options):
 
                 f = click.option(option_name, prompt=option_prompt, type=option_type)(f)
             else:
-                f = click.option(option, prompt=True)(f)
+                f = click.option(option, prompt=prompt)(f)
         return f
 
     decorate_with_options(add)
@@ -102,4 +102,4 @@ def generate_basic_functions(group, path, options):
 
         click.echo(ctx.obj['result'])
     
-    decorate_with_options(mod, True)
+    decorate_with_options(mod, True, False)
