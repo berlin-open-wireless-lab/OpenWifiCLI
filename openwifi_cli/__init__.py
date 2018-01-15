@@ -1,11 +1,13 @@
+""" main file for openwifi cli """
+
+import pprint
 import click
 from click_shell import shell
 import requests
 import requests.exceptions
-import pprint
-from .basic import generate_basic_functions, json_parsable, generate_show
+from .basic import generate_basic_functions, JsonParsable, generate_show
 
-JSON_PARSABLE = json_parsable()
+JSON_PARSABLE = JsonParsable()
 
 @shell(prompt='openwifi-shell >')
 @click.option('--server', default='http://localhost', help='Full URL-Path to the OpenWifi Server')
@@ -13,24 +15,27 @@ JSON_PARSABLE = json_parsable()
 @click.option('--password', default=None, help='Password')
 @click.pass_context
 def main(ctx, server, user, password):
+    """ main function for openwifi cli """
+
     if len(server) < 7 or\
        server[:7] != 'http://' or\
        server[:8] != 'https://':
         server = 'http://'+server
 
     try:
-        r = requests.get(server)
+        requests.get(server)
     except requests.exceptions.ConnectionError:
         click.echo('ERROR server not reachable')
         exit(1)
 
     login = requests.get(server+'/login')
     if not login.json():
-        if user == None:
+        if user is None:
             user = click.prompt('Please enter the username')
-        if password == None:
+        if password is None:
             password = click.prompt('Please enter the password', hide_input=True)
-        login = requests.post(server+'/login', json={'login':user, 'password':password}, allow_redirects=False)
+        login = requests.post(server+'/login', json={'login':user, 'password':password}\
+                , allow_redirects=False)
 
         if login.status_code != 302:
             click.echo('ERROR wrong credentials')
@@ -41,25 +46,29 @@ def main(ctx, server, user, password):
         ctx.obj['server'] = server
 
 @main.group()
-@click.pass_context
-def users(ctx):
+def users():
+    """ group for user related actions """
+
     pass
 
-users_options = ['--login', '--password', '--admin/--no-admin']
-generate_basic_functions(users, '/users', users_options)
+USERS_OPTIONS = ['--login', '--password', '--admin/--no-admin']
+generate_basic_functions(users, '/users', USERS_OPTIONS)
 
 @main.group()
-@click.pass_context
-def nodes(ctx):
+def nodes():
+    """ group for nodes related actions """
+
     pass
 
-nodes_options = ['--name', '--address', '--distribution', '--version', '--login', '--password']
-generate_basic_functions(nodes, '/nodes', nodes_options)
+NODES_OPTIONS = ['--name', '--address', '--distribution', '--version', '--login', '--password']
+generate_basic_functions(nodes, '/nodes', NODES_OPTIONS)
 
 @nodes.command()
 @click.pass_context
 @click.argument('uuid', nargs=-1)
 def get_diff(ctx, uuid):
+    """ get and print all diffs of a given node """
+
     jar = ctx.obj['cookies']
     server = ctx.obj['server']
 
@@ -77,45 +86,51 @@ def get_diff(ctx, uuid):
     click.echo(pretty)
 
 @main.group()
-@click.pass_context
-def services(ctx):
+def services():
+    """ group for service related actions """
+
     pass
 
-service_options = ['--name', {'name' : '--queries', 'type': JSON_PARSABLE} ,\
+SERVICE_OPTIONS = ['--name', {'name' : '--queries', 'type': JSON_PARSABLE},\
                    '--capability_script', '--capability_match']
-generate_basic_functions(services, '/service', service_options)
+generate_basic_functions(services, '/service', SERVICE_OPTIONS)
 
 @main.group()
-@click.pass_context
-def access(ctx):
+def access():
+    """ group for access related actions """
+
     pass
 
-access_options = ['--userid', '--apikeyid', '--access_all_nodes/--no-access_all_nodes', {'name' : '--data', 'type': JSON_PARSABLE},
+ACCESS_OPTIONS = ['--userid', '--apikeyid', '--access_all_nodes/--no-access_all_nodes',\
+                  {'name' : '--data', 'type': JSON_PARSABLE},\
                   {'name': '--nodes', 'type': JSON_PARSABLE}]
-generate_basic_functions(access, '/access', access_options)
+generate_basic_functions(access, '/access', ACCESS_OPTIONS)
 
 @main.group()
-@click.pass_context
-def settings(ctx):
+def settings():
+    """ group for settings related actions """
+
     pass
 
-settings_optios = ['--key', '--value']
-generate_basic_functions(settings, '/settings', settings_optios)
+SETTINGS_OPTIOS = ['--key', '--value']
+generate_basic_functions(settings, '/settings', SETTINGS_OPTIOS)
 
 @main.command()
 @click.pass_context
 @click.option('--name', prompt=True)
 def generate_apikey(ctx, name):
+    """ this functions triggers the generation of an api keys and returns it """
+
     jar = ctx.obj['cookies']
     server = ctx.obj['server']
     nodes_request = requests.post(server+'/get_apikey', json={"key":name}, cookies=jar)
     click.echo(nodes_request.text)
 
 @main.group()
-@click.pass_context
-def master_config(ctx):
+def master_config():
+    """ group for master config related actions """
+
     pass
 
-master_config_options = []
-generate_basic_functions(master_config, '/masterConfig', master_config_options, has_mod=False)
-
+MASTER_CONFIG_OPTIONS = []
+generate_basic_functions(master_config, '/masterConfig', MASTER_CONFIG_OPTIONS, has_mod=False)
