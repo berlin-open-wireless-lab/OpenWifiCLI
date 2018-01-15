@@ -11,42 +11,36 @@ class json_parsable(click.ParamType):
         except ValueError:
             self.fail('%s is not a valid json string.' % value, param, ctx)
 
-
 def generate_show(group, path):
     @group.command()
     @click.pass_context
-    @click.argument('uuid', nargs=-1, required=False)
-    def show(ctx, uuid):
-        jar = ctx.obj['cookies']
-        server = ctx.obj['server']
-
-        ctx.obj['result'] = []
-        for uid in uuid:
-            nodes_request = requests.get(server+path+'/'+uid, cookies=jar)
-            ctx.obj['result'].append(nodes_request.json())
-
-        if not uuid:
-            nodes_request = requests.get(server+path, cookies=jar)
-            ctx.obj['result'] = nodes_request.json()
-
-        click.echo(ctx.obj['result'])
+    @click.argument('uuids', nargs=-1, required=False)
+    def show(ctx, uuids):
+        do_loop_requests(ctx, uuids, requests.get, path)
 
 def generate_delete(group, path):
     @group.command()
     @click.pass_context
     @click.argument('uuids', nargs=-1)
     def delete(ctx, uuids):
-        jar = ctx.obj['cookies']
-        server = ctx.obj['server']
+        do_loop_requests(ctx, uuids, requests.delete, path)
 
-        ctx.obj['result'] = []
-        for uuid in uuids:
-            nodes_request = requests.delete(server+path+'/'+uuid, cookies=jar)
-            ctx.obj['result'].append(nodes_request.json())
+def do_loop_requests(ctx, uuids, req_func, path):
+    jar = ctx.obj['cookies']
+    server = ctx.obj['server']
 
-        click.echo(ctx.obj['result'])
+    ctx.obj['result'] = []
+    for uuid in uuids:
+        nodes_request = req_func(server+path+'/'+uuid, cookies=jar)
+        append_check_for_json(ctx.obj['result'], nodes_request)
 
-def generate_basic_functions(group, path, options):
+    if not uuids:
+        nodes_request = requests.get(server+path, cookies=jar)
+        append_check_for_json(ctx.obj['result'], nodes_request)
+
+    json_pretty_print(ctx.obj['result'])
+
+def generate_basic_functions(group, path, options, has_mod=True):
 
     generate_show(group, path)
     generate_delete(group, path)
@@ -58,9 +52,9 @@ def generate_basic_functions(group, path, options):
         server = ctx.obj['server']
 
         nodes_request = requests.post(server+path, cookies=jar, json=kwargs)
-        ctx.obj['result'] = nodes_request.text
+        ctx.obj['result'] = get_json_if_possible(nodes_request)
 
-        click.echo(ctx.obj['result'])
+        json_pretty_print(ctx.obj['result'])
 
     def decorate_with_options(f, ignore_prompt=False, prompt=True):
         for option in options:
@@ -86,20 +80,39 @@ def generate_basic_functions(group, path, options):
 
     decorate_with_options(add)
 
-    @group.command()
-    @click.pass_context
-    @click.argument('ids', nargs=-1)
-    def mod(ctx, ids, *args, **kwargs):
+    if has_mod:
+        @group.command()
+        @click.pass_context
+        @click.argument('ids', nargs=-1)
+        def mod(ctx, ids, *args, **kwargs):
 
-        kwargs = dict(filter(lambda x: x[1] != None, kwargs.items()))
-        jar = ctx.obj['cookies']
-        server = ctx.obj['server']
+            kwargs = dict(filter(lambda x: x[1] != None, kwargs.items()))
+            jar = ctx.obj['cookies']
+            server = ctx.obj['server']
 
-        ctx.obj['result'] = []
-        for id in ids:
-            nodes_request = requests.post(server+path+'/'+id, cookies=jar, json=kwargs)
-            ctx.obj['result'].append(nodes_request.text)
+            ctx.obj['result'] = []
+            for id in ids:
+                nodes_request = requests.post(server+path+'/'+id, cookies=jar, json=kwargs)
+                append_check_for_json(ctx.obj['result'], nodes_request)
 
-        click.echo(ctx.obj['result'])
-    
-    decorate_with_options(mod, True, False)
+            json_pretty_print(ctx.obj['result'])
+
+        decorate_with_options(mod, True, False)
+
+def get_json_if_possible(request):
+    import json.decoder
+    try:
+        return request.json()
+    except json.decoder.JSONDecodeError:
+        return request.text
+
+def append_check_for_json(result, request):
+    import json.decoder
+    try:
+        result.append(request.json())
+    except json.decoder.JSONDecodeError:
+        result.append(request.text)
+
+def json_pretty_print(result):
+    result = json.dumps(result, sort_keys=True, indent=4)
+    click.echo(result)

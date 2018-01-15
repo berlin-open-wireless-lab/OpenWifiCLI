@@ -73,11 +73,8 @@ def get_diff(ctx, uuid):
         print(type(data))
         ctx.obj['result'].append(data)
 
-    #import pdb
-    #pdb.set_trace()
     pretty = pprint.pformat(ctx.obj['result'], indent=4)
     click.echo(pretty)
-    #click.echo(ctx.obj['result'])
 
 @main.group()
 @click.pass_context
@@ -113,3 +110,12 @@ def generate_apikey(ctx, name):
     server = ctx.obj['server']
     nodes_request = requests.post(server+'/get_apikey', json={"key":name}, cookies=jar)
     click.echo(nodes_request.text)
+
+@main.group()
+@click.pass_context
+def master_config(ctx):
+    pass
+
+master_config_options = []
+generate_basic_functions(master_config, '/masterConfig', master_config_options, has_mod=False)
+
